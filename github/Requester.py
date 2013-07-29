@@ -173,20 +173,29 @@ class Requester:
         return status, responseHeaders, output
 
     def __requestRaw(self, verb, url, requestHeaders, input):
-        cnx = self.__createConnection()
-        cnx.request(
-            verb,
-            url,
-            input,
-            requestHeaders
-        )
-        response = cnx.getresponse()
+        MAX_TRIES = 10
+        responseHeaders = None
+        output = None
+        for n in xrange(MAX_TRIES):
+            print 'Attempt %d: github.Requester.__requestRaw verb:%s url:%s headers:%s input:%s' % (n, verb, url, requestHeaders, input)
+            cnx = self.__createConnection()
+            cnx.request(
+                verb,
+                url,
+                input,
+                requestHeaders
+                )
+            response = cnx.getresponse()
 
-        status = response.status
-        responseHeaders = dict(response.getheaders())
-        output = response.read()
+            status = response.status
+            if status == 500:
+                cnx.close()
+                continue
+            responseHeaders = dict(response.getheaders())
+            output = response.read()
+            cnx.close()
+            break
 
-        cnx.close()
 
         self.__log(verb, url, requestHeaders, input, status, responseHeaders, output)
 
